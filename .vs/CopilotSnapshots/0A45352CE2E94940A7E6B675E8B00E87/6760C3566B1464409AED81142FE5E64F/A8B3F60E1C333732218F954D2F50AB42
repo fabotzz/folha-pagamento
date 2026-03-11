@@ -1,0 +1,78 @@
+﻿import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { HttpClient, provideHttpClient, withFetch } from '@angular/common/http';
+import { inject } from '@angular/core';
+
+@Component({
+  selector: 'app-header',
+  standalone: true,
+  imports: [CommonModule, RouterLink, RouterLinkActive],
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss']
+})
+export class HeaderComponent {
+  title = 'Sistema de Folha de Pagamento';
+  private http = inject(HttpClient);
+  token: string | null = null;
+  userName: string | null = null;
+  userRole: string | null = null;
+
+  constructor() {
+    this.token = localStorage.getItem('auth_token');
+    if (this.token) this.installFetchAuth(this.token);
+  }
+
+  async loginAsAdmin() {
+    try {
+      const res = await fetch('/api/dev/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'Admin', email: 'admin@local', fullName: 'Admin Dev' })
+      });
+      if (!res.ok) throw new Error('Erro ao obter token');
+      const data = await res.json();
+      const token = data.token;
+      if (token) {
+        localStorage.setItem('auth_token', token);
+        this.token = token;
+        this.userName = data.fullName ?? 'Admin';
+        this.userRole = data.role ?? 'Admin';
+        localStorage.setItem('auth_user', this.userName);
+        localStorage.setItem('auth_role', this.userRole);
+        this.installFetchAuth(token);
+        alert('Logado como ' + this.userRole + ' (simulado)');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao autenticar (dev)');
+    }
+  }
+
+  logout() {
+    localStorage.removeItem('auth_token');
+    this.token = null;
+    // restore original fetch by reloading the page
+    window.location.reload();
+  }
+
+  private installFetchAuth(token: string) {
+    const _fetch = window.fetch;
+    // avoid double wrapping
+    if ((window as any).__auth_fetch_installed) return;
+    (window as any).__auth_fetch_installed = true;
+    window.fetch = function (input: RequestInfo, init?: RequestInit) {
+      init = init || {};
+      init.headers = init.headers || {} as any;
+      // handle Headers instance
+      if (init.headers instanceof Headers) {
+        init.headers.set('Authorization', 'Bearer ' + token);
+      } else if (Array.isArray(init.headers)) {
+        init.headers.push(['Authorization', 'Bearer ' + token]);
+      } else {
+        (init.headers as any)['Authorization'] = 'Bearer ' + token;
+      }
+      return _fetch(input, init);
+    };
+  }
+}

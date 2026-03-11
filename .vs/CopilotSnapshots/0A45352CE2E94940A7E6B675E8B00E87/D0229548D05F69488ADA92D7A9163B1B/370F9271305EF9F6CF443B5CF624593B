@@ -1,0 +1,21 @@
+﻿<header class="header">
+  <div class="container">
+    <div class="logo">
+      <h1>{{ title }}</h1>
+    </div>
+    <nav class="nav">
+      <ul>
+        <li><a routerLink="/employees" routerLinkActive="active">Funcionários</a></li>
+        <li><a routerLink="/payroll" routerLinkActive="active">Folha de Pagamento</a></li>
+      </ul>
+    </nav>
+  <div class="auth-actions">
+    <div class="user-info" *ngIf="isAuthenticated()">
+      <span class="user-name">{{ userName }}</span>
+      <span class="user-role">({{ userRole }})</span>
+    </div>
+    <button *ngIf="!isAuthenticated()" (click)="loginAsAdmin()" class="btn-login">Entrar como Admin (dev)</button>
+    <button *ngIf="isAuthenticated()" (click)="logout()" class="btn-logout">Sair</button>
+  </div>
+  </div>
+</header>

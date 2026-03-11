@@ -1,0 +1,58 @@
+﻿import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
+
+@Component({
+  selector: 'app-header',
+  standalone: true,
+  imports: [CommonModule, RouterLink, RouterLinkActive],
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss']
+})
+export class HeaderComponent {
+  title = 'Sistema de Folha de Pagamento';
+  private http = inject(HttpClient);
+  private auth = inject(AuthService);
+  token: string | null = null;
+  userName: string | null = null;
+  userRole: string | null = null;
+
+  constructor() {
+    this.token = this.auth.getToken();
+    const user = this.auth.getUser();
+    this.userName = user.name;
+    this.userRole = user.role;
+  }
+
+  async loginAsAdmin() {
+    try {
+      const data: any = await this.http.post('/api/dev/auth/token', { role: 'Admin', email: 'admin@local', fullName: 'Admin Dev' }).toPromise();
+      const token = data?.token;
+      if (token) {
+        this.auth.setToken(token);
+        this.auth.setUser(data.fullName ?? 'Admin', data.role ?? 'Admin');
+        this.token = token;
+        this.userName = data.fullName ?? 'Admin';
+        this.userRole = data.role ?? 'Admin';
+        alert('Logado como ' + this.userRole + ' (simulado)');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao autenticar (dev)');
+    }
+  }
+
+  logout() {
+    this.auth.clear();
+    this.token = null;
+    this.userName = null;
+    this.userRole = null;
+    // reload to reset state
+    window.location.reload();
+  }
+
+  // fetch wrapper removed: Authorization header is now added via Angular HttpInterceptor
+}

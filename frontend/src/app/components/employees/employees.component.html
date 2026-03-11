@@ -1,0 +1,55 @@
+<div class="container">
+  <div class="header">
+    <h1>Funcionários</h1>
+    <a routerLink="/employees/new" class="btn-primary">+ Novo Funcionário</a>
+  </div>
+
+  <div class="search-box">
+    <input
+      type="text"
+      placeholder="Buscar por nome ou CPF..."
+      [(ngModel)]="searchTerm"
+      (input)="filterEmployees()"
+    />
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Carregando...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  @if (!loading && !error) {
+    <div class="employee-grid">
+      @if (filteredEmployees.length === 0) {
+        <div class="no-results">
+          Nenhum funcionário encontrado.
+        </div>
+      }
+
+      @for (emp of filteredEmployees; track emp.id) {
+        <div class="employee-card">
+          <div class="card-header">
+            <h3>{{ emp.fullName }}</h3>
+            <div class="actions">
+              <a [routerLink]="['/employees/edit', emp.id]" class="btn-edit" title="Editar">✏️</a>
+              <button (click)="deleteEmployee(emp.id)" class="btn-delete" title="Excluir">🗑️</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <p><strong>CPF:</strong> {{ formatDocument(emp.document) }}</p>
+            <p><strong>Nascimento:</strong> {{ emp.birthDate | date:'dd/MM/yyyy' }}</p>
+            <p><strong>Data de Contratação:</strong> {{ emp.hireDate | date:'dd/MM/yyyy' }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

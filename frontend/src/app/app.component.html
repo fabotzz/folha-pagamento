@@ -1,0 +1,9 @@
+<app-header *ngIf="authService.isLoggedIn()"></app-header>
+
+<main class="main-content" [class.with-header]="authService.isLoggedIn()">
+  <div class="container fade-in">
+    <router-outlet></router-outlet>
+  </div>
+</main>
+
+<app-footer></app-footer>

@@ -1,0 +1,142 @@
+<div class="container">
+  <div class="header">
+    <h2>{{ isEditMode ? 'Editar Funcionário' : 'Novo Funcionário' }}</h2>
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Carregando...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error-message">
+      {{ error }}
+    </div>
+  }
+
+  @if (!loading) {
+    <form (ngSubmit)="onSubmit()" #employeeForm="ngForm" class="employee-form">
+      <div class="form-group">
+        <label for="fullName">Nome Completo *</label>
+        <input
+          type="text"
+          id="fullName"
+          name="fullName"
+          [(ngModel)]="employee.fullName"
+          required
+          minlength="3"
+          maxlength="100"
+          #fullName="ngModel"
+          class="form-control"
+          [class.invalid]="fullName.invalid && fullName.touched"
+          placeholder="Digite o nome completo"
+        />
+        @if (fullName.invalid && fullName.touched) {
+          <div class="error-text">
+            @if (fullName.errors?.['required']) {
+              <div>Nome é obrigatório</div>
+            }
+            @if (fullName.errors?.['minlength']) {
+              <div>Nome deve ter pelo menos 3 caracteres</div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          [(ngModel)]="employee.email"
+          required
+          email
+          maxlength="100"
+          #email="ngModel"
+          class="form-control"
+          [class.invalid]="email.invalid && email.touched"
+          placeholder="Digite o email"
+        />
+        @if (email.invalid && email.touched) {
+          <div class="error-text">
+            @if (email.errors?.['required']) {
+              <div>Email é obrigatório</div>
+            }
+            @if (email.errors?.['email']) {
+              <div>Email inválido</div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="document">CPF *</label>
+        <input
+          type="text"
+          id="document"
+          name="document"
+          [(ngModel)]="employee.document"
+          required
+          minlength="11"
+          maxlength="11"
+          pattern="[0-9]*"
+          #document="ngModel"
+          class="form-control"
+          [class.invalid]="document.invalid && document.touched"
+          placeholder="Apenas números (11 dígitos)"
+          (input)="onDocumentInput($event)"
+        />
+        @if (document.invalid && document.touched) {
+          <div class="error-text">
+            @if (document.errors?.['required']) {
+              <div>CPF é obrigatório</div>
+            }
+            @if (document.errors?.['minlength'] || document.errors?.['maxlength']) {
+              <div>CPF deve ter exatamente 11 dígitos</div>
+            }
+            @if (document.errors?.['pattern']) {
+              <div>CPF deve conter apenas números</div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-row">
+        <!-- DATA DE NASCIMENTO - CAMPO OBRIGATÓRIO -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Data de Nascimento</mat-label>
+          <input matInput [matDatepicker]="birthPicker" formControlName="birthDate">
+          <mat-datepicker-toggle matSuffix [for]="birthPicker"></mat-datepicker-toggle>
+          <mat-datepicker #birthPicker></mat-datepicker>
+          <mat-error *ngIf="employeeForm.get('birthDate')?.hasError('required')">
+            Data de nascimento obrigatória
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Data de Admissão</mat-label>
+          <input matInput [matDatepicker]="hirePicker" formControlName="hireDate">
+          <mat-datepicker-toggle matSuffix [for]="hirePicker"></mat-datepicker-toggle>
+          <mat-datepicker #hirePicker></mat-datepicker>
+          <mat-error *ngIf="employeeForm.get('hireDate')?.hasError('required')">
+            Data de admissão obrigatória
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <a routerLink="/employees" class="btn-secondary">Cancelar</a>
+        <button 
+          type="submit" 
+          [disabled]="employeeForm.invalid || loading"
+          class="btn-primary"
+        >
+          {{ isEditMode ? 'Atualizar' : 'Salvar' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

@@ -1,0 +1,15 @@
+﻿import { Routes } from '@angular/router';
+import { EmployeesComponent } from './components/employees/employees.component';
+import { EmployeeFormComponent } from './components/employee-form/employee-form.component';
+import { PayrollsComponent } from './components/payrolls/payrolls.component';
+import { PayrollFormComponent } from './components/payroll-form/payroll-form.component';
+
+export const routes: Routes = [
+  { path: '', redirectTo: '/employees', pathMatch: 'full' },
+  { path: 'employees', component: EmployeesComponent },
+  { path: 'employees/new', component: EmployeeFormComponent },
+  { path: 'employees/edit/:id', component: EmployeeFormComponent },
+  { path: 'payroll', component: PayrollsComponent },
+  { path: 'payroll/new', component: PayrollFormComponent },
+  { path: '**', redirectTo: '/employees' }
+];

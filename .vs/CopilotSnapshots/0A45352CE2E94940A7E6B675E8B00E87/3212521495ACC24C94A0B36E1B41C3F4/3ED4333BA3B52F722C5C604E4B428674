@@ -1,0 +1,36 @@
+﻿import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private tokenKey = 'auth_token';
+  private userKey = 'auth_user';
+  private roleKey = 'auth_role';
+
+  setToken(token: string) {
+    localStorage.setItem(this.tokenKey, token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.tokenKey);
+  }
+
+  clear() {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
+    localStorage.removeItem(this.roleKey);
+  }
+
+  setUser(name: string, role: string) {
+    localStorage.setItem(this.userKey, name);
+    localStorage.setItem(this.roleKey, role);
+  }
+
+  getUser(): { name: string | null; role: string | null } {
+    return {
+      name: localStorage.getItem(this.userKey),
+      role: localStorage.getItem(this.roleKey)
+    };
+  }
+}

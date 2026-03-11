@@ -1,0 +1,198 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Payroll.API.Data;
+using Payroll.API.DTOs.Auth;
+using Payroll.API.Models.Auth;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace Payroll.API.Services.Auth;
+
+public class AuthService : IAuthService
+{
+    private readonly UserManager<User> _userManager;
+    private readonly SignInManager<User> _signInManager;
+    private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
+
+    public AuthService(
+        UserManager<User> userManager,
+        SignInManager<User> signInManager,
+        AppDbContext context,
+        IConfiguration configuration)
+    {
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _context = context;
+        _configuration = configuration;
+    }
+
+    public async Task<AuthResponseDto> RegisterAsync(RegisterDto registerDto)
+    {
+        // Verificar se email já existe
+        var existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
+        if (existingUser != null)
+            throw new Exception("Email já está em uso");
+
+        // Se tiver EmployeeId, verificar se existe
+        if (registerDto.EmployeeId.HasValue)
+        {
+            var employee = await _context.Employees.FindAsync(registerDto.EmployeeId.Value);
+            if (employee == null)
+                throw new Exception("Funcionário não encontrado");
+        }
+
+        // Criar usuário
+        var user = new User
+        {
+            UserName = registerDto.Email,
+            Email = registerDto.Email,
+            FullName = registerDto.FullName,
+            Role = Enum.Parse<UserRole>(registerDto.Role),
+            EmployeeId = registerDto.EmployeeId
+        };
+
+        var result = await _userManager.CreateAsync(user, registerDto.Password);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception($"Erro ao criar usuário: {errors}");
+        }
+
+        // Adicionar à role
+        await _userManager.AddToRoleAsync(user, registerDto.Role);
+
+        // Gerar token
+        var token = await GenerateJwtToken(user);
+
+        return new AuthResponseDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email!,
+            Role = user.Role.ToString(),
+            Token = token,
+            EmployeeId = user.EmployeeId
+        };
+    }
+
+    public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
+    {
+        var user = await _userManager.FindByEmailAsync(loginDto.Email);
+        if (user == null)
+            throw new Exception("Usuário ou senha inválidos");
+
+        var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
+        if (!result.Succeeded)
+            throw new Exception("Usuário ou senha inválidos");
+
+        var token = await GenerateJwtToken(user);
+
+        return new AuthResponseDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email!,
+            Role = user.Role.ToString(),
+            Token = token,
+            EmployeeId = user.EmployeeId
+        };
+    }
+
+    public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
+    {
+        var users = await _userManager.Users.ToListAsync();
+        var result = new List<UserDto>();
+
+        foreach (var user in users)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var employeeName = user.EmployeeId.HasValue
+                ? (await _context.Employees.FindAsync(user.EmployeeId.Value))?.FullName
+                : null;
+
+            result.Add(new UserDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email!,
+                Role = roles.FirstOrDefault() ?? "Employee",
+                EmployeeId = user.EmployeeId,
+                EmployeeName = employeeName
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<UserDto> GetUserByIdAsync(int id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null)
+            throw new Exception("Usuário não encontrado");
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var employeeName = user.EmployeeId.HasValue
+            ? (await _context.Employees.FindAsync(user.EmployeeId.Value))?.FullName
+            : null;
+
+        return new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email!,
+            Role = roles.FirstOrDefault() ?? "Employee",
+            EmployeeId = user.EmployeeId,
+            EmployeeName = employeeName
+        };
+    }
+
+    public async Task<bool> DeleteUserAsync(int id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null)
+            return false;
+
+        var result = await _userManager.DeleteAsync(user);
+        return result.Succeeded;
+    }
+
+    private async Task<string> GenerateJwtToken(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+            new Claim("fullName", user.FullName),
+            new Claim("role", user.Role.ToString())
+        };
+
+        if (user.EmployeeId.HasValue)
+        {
+            claims.Add(new Claim("employeeId", user.EmployeeId.Value.ToString()));
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var expires = DateTime.Now.AddDays(Convert.ToDouble(_configuration["Jwt:ExpireDays"] ?? "7"));
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: expires,
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}

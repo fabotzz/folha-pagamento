@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\frontend\\folha-web\\src\\app",
+    "\\frontend\\folha-web\\src\\app\\services",
+    "\\services",
+    "\\services\\Payroll.API",
+    "\\services\\Payroll.API\\Models",
+    "\\services\\Payroll.API\\Services",
+    "\\services\\Payroll.API\\Services\\Auth",
+    "\\services\\Payroll.API\\wwwroot",
+    "\\services\\Payroll.API\\wwwroot\\swagger-ui"
+  ],
+  "SelectedNode": "\\services\\Payroll.API\\Models\\Employee.cs",
+  "PreviewInSolutionExplorer": false
+}

@@ -1,0 +1,241 @@
+<div class="payrolls-container fade-in">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h1>Folhas de Pagamento</h1>
+      <p>Gerencie as folhas de pagamento da empresa</p>
+    </div>
+    
+    <button mat-raised-button color="primary" (click)="openPayrollForm()">
+      <mat-icon>calculate</mat-icon>
+      Nova Folha
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon color="primary">receipt</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ payrolls.length }}</span>
+          <span class="stat-label">Total</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon color="accent">payments</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalAmount | currency:'BRL' }}</span>
+          <span class="stat-label">Total Bruto</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon color="warn">money_off</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalDeductions | currency:'BRL' }}</span>
+          <span class="stat-label">Total Deduções</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon style="color: #4caf50;">savings</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalNet | currency:'BRL' }}</span>
+          <span class="stat-label">Total Líquido</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <div class="filters-grid">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Funcionário</mat-label>
+          <mat-select [formControl]="employeeFilter">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let emp of employees" [value]="emp.id">
+              {{ emp.fullName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Status</mat-label>
+          <mat-select [formControl]="statusFilter">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let status of statuses" [value]="status">
+              {{ status }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Período</mat-label>
+          <mat-select [formControl]="periodFilter">
+            <mat-option value="">Todos</mat-option>
+            <mat-option value="current">Mês Atual</mat-option>
+            <mat-option value="last">Mês Anterior</mat-option>
+            <mat-option value="year">Ano Atual</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-stroked-button (click)="clearFilters()">
+          <mat-icon>clear</mat-icon>
+          Limpar Filtros
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="table-card">
+    <mat-card-header>
+      <mat-card-title>Lista de Folhas</mat-card-title>
+      <mat-card-subtitle>Clique em uma folha para ver detalhes</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Search -->
+      <div class="search-field">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Pesquisar</mat-label>
+          <input matInput (keyup)="applyFilter($event)" placeholder="Funcionário, mês...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div class="loading-spinner" *ngIf="loading">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive" *ngIf="!loading">
+        <table mat-table [dataSource]="dataSource" matSort class="full-width">
+          <ng-container matColumnDef="employeeName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Funcionário </th>
+            <td mat-cell *matCellDef="let payroll">
+              <div class="cell-with-icon">
+                <mat-icon>person</mat-icon>
+                {{ payroll.employeeName }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="period">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Período </th>
+            <td mat-cell *matCellDef="let payroll">
+              <div class="cell-with-icon">
+                <mat-icon>calendar_today</mat-icon>
+                {{ monthNames[payroll.month - 1] }}/{{ payroll.year }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="grossSalary">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Bruto </th>
+            <td mat-cell *matCellDef="let payroll">
+              <div class="cell-with-icon">
+                <mat-icon>attach_money</mat-icon>
+                {{ payroll.grossSalary | currency:'BRL' }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="netSalary">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Líquido </th>
+            <td mat-cell *matCellDef="let payroll">
+              <div class="cell-with-icon">
+                <mat-icon>savings</mat-icon>
+                {{ payroll.netSalary | currency:'BRL' }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef> Status </th>
+            <td mat-cell *matCellDef="let payroll">
+              <mat-chip-set>
+                <mat-chip [color]="getStatusColor(payroll.status)" selected>
+                  {{ payroll.status }}
+                </mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef> Ações </th>
+            <td mat-cell *matCellDef="let payroll">
+              <button mat-icon-button color="primary" (click)="viewPayroll(payroll)" 
+                      matTooltip="Ver detalhes">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="Mais ações">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item *ngIf="payroll.status !== 'Paid'" 
+                        (click)="updateStatusWithString(payroll, 'Paid')">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Marcar como Pago</span>
+                </button>
+                <button mat-menu-item *ngIf="payroll.status !== 'Calculated'" 
+                        (click)="updateStatusWithString(payroll, 'Calculated')">
+                  <mat-icon>calculate</mat-icon>
+                  <span>Recalcular</span>
+                </button>
+                <button mat-menu-item *ngIf="payroll.status !== 'Cancelled'" 
+                        (click)="updateStatusWithString(payroll, 'Cancelled')">
+                  <mat-icon>cancel</mat-icon>
+                  <span>Cancelar</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item color="warn" (click)="deletePayroll(payroll.id)">
+                  <mat-icon color="warn">delete</mat-icon>
+                  <span>Excluir</span>
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              (click)="viewPayroll(row)" class="clickable-row"></tr>
+
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+              <div class="no-data">
+                <mat-icon>receipt_long</mat-icon>
+                <p>Nenhuma folha de pagamento encontrada</p>
+                <button mat-stroked-button color="primary" (click)="openPayrollForm()">
+                  Calcular primeira folha
+                </button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 50]" showFirstLastButtons>
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>
