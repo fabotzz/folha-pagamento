@@ -1,0 +1,36 @@
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+// Intentionally avoid referencing Microsoft.OpenApi.Models to prevent
+// build/runtime issues with OpenApi package versions in some environments.
+
+namespace Payroll.API.Extensions;
+
+public static class SwaggerExtensions
+{
+    public static IServiceCollection AddSwaggerConfiguration(this IServiceCollection services)
+    {
+        // Basic registration without direct OpenApi model usage.
+        // Advanced OpenApi definitions (OpenApiInfo, security schemes) are
+        // intentionally not referenced here to avoid versioning issues.
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+
+        return services;
+    }
+
+    public static IApplicationBuilder UseSwaggerConfiguration(this IApplicationBuilder app, IHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Payroll API V1");
+                c.RoutePrefix = "swagger";
+            });
+        }
+
+        return app;
+    }
+}

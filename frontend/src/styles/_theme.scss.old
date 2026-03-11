@@ -1,0 +1,23 @@
+@use '@angular/material' as mat;
+
+// Define o tema Deep Purple (sintaxe simplificada)
+$primary: mat.define-palette(mat.$deep-purple-palette);
+$accent: mat.define-palette(mat.$amber-palette, A200, A100, A400);
+$warn: mat.define-palette(mat.$red-palette);
+
+// Cria o tema - versão simplificada
+$theme: mat.define-light-theme($primary, $accent, $warn);
+
+// Aplica o tema
+@include mat.all-component-themes($theme);
+
+// Variáveis CSS
+:root {
+  --primary: #{mat.get-color-from-palette($primary, 500)};
+  --accent: #{mat.get-color-from-palette($accent, 500)};
+  --warn: #{mat.get-color-from-palette($warn, 500)};
+  --background: #fafafa;
+  --surface: #ffffff;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+}

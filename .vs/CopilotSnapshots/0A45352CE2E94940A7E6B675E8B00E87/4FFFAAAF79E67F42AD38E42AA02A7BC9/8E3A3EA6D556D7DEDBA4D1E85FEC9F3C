@@ -1,0 +1,45 @@
+﻿(function () {
+  function setAuth(token) {
+    if (token) {
+      // override fetch to add Authorization header for Swagger requests
+      const _fetch = window.fetch;
+      window.fetch = function (input, init) {
+        init = init || {};
+        init.headers = init.headers || {};
+        if (!init.headers['Authorization'] && !init.headers['authorization']) {
+          init.headers['Authorization'] = 'Bearer ' + token;
+        }
+        return _fetch(input, init);
+      };
+    }
+  }
+
+  function addButton() {
+    if (document.getElementById('custom-auth-btn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'custom-auth-btn';
+    btn.textContent = 'Authorize';
+    btn.style.position = 'fixed';
+    btn.style.right = '12px';
+    btn.style.top = '12px';
+    btn.style.zIndex = 1000;
+    btn.style.padding = '6px 10px';
+    btn.style.background = '#0d6efd';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '4px';
+    btn.onclick = () => {
+      const token = prompt('Enter JWT token (without "Bearer "):');
+      if (token) {
+        setAuth(token);
+        alert('Token set for Swagger requests');
+      }
+    };
+    document.body.appendChild(btn);
+  }
+
+  window.addEventListener('load', function () {
+    // wait a bit for swagger UI to render
+    setTimeout(addButton, 1000);
+  });
+})();
