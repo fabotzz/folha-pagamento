@@ -20,15 +20,27 @@ export class EmployeeService {
     return this.http.get<Employee>(`${this.apiUrl}/${id}`);
   }
 
-  createEmployee(employee: CreateEmployee): Observable<Employee> {
-    return this.http.post<Employee>(this.apiUrl, employee);
+  createEmployee(data: any): Observable<Employee> {
+    return this.http.post<Employee>(this.apiUrl, data);
   }
 
-  updateEmployee(id: number, employee: CreateEmployee): Observable<Employee> {
-    return this.http.put<Employee>(`${this.apiUrl}/${id}`, employee);
+  updateEmployee(id: number, data: any): Observable<Employee> {
+    return this.http.put<Employee>(`${this.apiUrl}/${id}`, data);
   }
 
+  // Soft delete (existente)
   deleteEmployee(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  // HARD DELETE - NOVO MÉTODO
+  hardDeleteEmployee(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/hard/${id}`);
+  }
+
+  // HARD DELETE ALL - NOVO MÉTODO (opcional, para admin)
+  hardDeleteAllEmployees(): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/hard/all`);
+  }
+
 }

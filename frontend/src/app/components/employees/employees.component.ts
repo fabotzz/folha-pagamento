@@ -16,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu'; // <-- ADICIONADO
 
 import { EmployeeService } from '../../services/employee.service';
 import { Employee } from '../../models/employee.model';
@@ -39,7 +40,8 @@ import { EmployeeFormComponent } from '../employee-form/employee-form.component'
     MatInputModule,
     MatCardModule,
     MatTooltipModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatMenuModule // <-- ADICIONADO
   ],
   template: `
     <div class="employees-container fade-in">
@@ -58,42 +60,42 @@ import { EmployeeFormComponent } from '../employee-form/employee-form.component'
 
       <!-- Stats Cards -->
       <div class="stats-grid">
-  <mat-card class="stat-card">
-    <mat-card-content>
-      <div class="stat-icon">
-        <mat-icon color="primary">people</mat-icon>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ employees.length }}</span>
-        <span class="stat-label">Total</span>
-      </div>
-    </mat-card-content>
-  </mat-card>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon color="primary">people</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ employees.length }}</span>
+              <span class="stat-label">Total</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-  <mat-card class="stat-card">
-    <mat-card-content>
-      <div class="stat-icon">
-        <mat-icon color="accent">person_add</mat-icon>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ activeEmployees }}</span>
-        <span class="stat-label">Ativos</span>
-      </div>
-    </mat-card-content>
-  </mat-card>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon color="accent">person_add</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ activeEmployees }}</span>
+              <span class="stat-label">Ativos</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-  <mat-card class="stat-card">
-    <mat-card-content>
-      <div class="stat-icon">
-        <mat-icon color="warn">person_off</mat-icon>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon color="warn">person_off</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ inactiveEmployees }}</span>
+              <span class="stat-label">Inativos</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
       </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ inactiveEmployees }}</span>
-        <span class="stat-label">Inativos</span>
-      </div>
-    </mat-card-content>
-  </mat-card>
-</div>
 
       <!-- Search and Table -->
       <mat-card class="table-card">
@@ -168,16 +170,33 @@ import { EmployeeFormComponent } from '../employee-form/employee-form.component'
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef> Ações </th>
                 <td mat-cell *matCellDef="let employee">
-                  <button mat-icon-button color="primary" (click)="openEmployeeForm(employee)" 
-                          matTooltip="Editar">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button mat-icon-button color="warn" (click)="deleteEmployee(employee.id)" 
-                          matTooltip="Excluir">
-                    <mat-icon>delete</mat-icon>
-                  </button>
+                  <div class="action-buttons">
+                    <!-- Botão Editar (sempre visível) -->
+                    <button mat-icon-button color="primary" (click)="openEmployeeForm(employee)" 
+                            matTooltip="Editar funcionário">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    
+                    <!-- Botão Inativar (se estiver ativo) -->
+                    <button *ngIf="employee.isActive" mat-icon-button color="accent" 
+                            (click)="toggleActive(employee)" matTooltip="Inativar funcionário">
+                      <mat-icon>person_off</mat-icon>
+                    </button>
+                    
+                    <!-- Botão Reativar (se estiver inativo) -->
+                    <button *ngIf="!employee.isActive" mat-icon-button color="primary" 
+                            (click)="toggleActive(employee)" matTooltip="Reativar funcionário">
+                      <mat-icon>person_add</mat-icon>
+                    </button>
+                    
+                    <!-- Botão Excluir Permanentemente (sempre visível, mas perigoso) -->
+                    <button mat-icon-button color="warn" (click)="hardDeleteEmployee(employee.id)" 
+                            matTooltip="Excluir permanentemente (IRREVERSÍVEL)">
+                      <mat-icon>delete_forever</mat-icon>
+                    </button>
+                  </div>
                 </td>
-              </ng-container>
+</ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
@@ -346,6 +365,17 @@ import { EmployeeFormComponent } from '../employee-form/employee-form.component'
       }
     }
 
+    /* Estilo para opção de hard delete */
+    .hard-delete-option {
+      .warn-text {
+        color: #f44336;
+      }
+      
+      &:hover {
+        background-color: rgba(244, 67, 54, 0.1);
+      }
+    }
+
     @media (max-width: 768px) {
       .employees-container {
         padding: 16px;
@@ -439,23 +469,87 @@ export class EmployeesComponent implements OnInit {
   }
 
   deleteEmployee(id: number): void {
-    if (confirm('Tem certeza que deseja excluir este funcionário?')) {
+    if (confirm('Tem certeza que deseja inativar este funcionário?')) {
       this.employeeService.deleteEmployee(id).subscribe({
         next: () => {
-          this.snackBar.open('Funcionário excluído com sucesso', 'OK', {
+          this.snackBar.open('Funcionário inativado com sucesso', 'OK', {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
           this.loadEmployees();
         },
         error: (error) => {
-          console.error('Erro ao excluir funcionário:', error);
-          this.snackBar.open('Erro ao excluir funcionário', 'OK', {
+          console.error('Erro ao inativar funcionário:', error);
+          this.snackBar.open('Erro ao inativar funcionário', 'OK', {
             duration: 3000,
             panelClass: ['error-snackbar']
           });
         }
       });
+    }
+  }
+  toggleActive(employee: Employee): void {
+  const novoStatus = !employee.isActive;
+  const acao = novoStatus ? 'reativar' : 'inativar';
+  
+  if (confirm(`Tem certeza que deseja ${acao} este funcionário?`)) {
+    // Criar um objeto com apenas os campos necessários para atualização
+    const employeeUpdate = {
+      ...employee,
+      isActive: novoStatus
+    };
+    
+    this.employeeService.updateEmployee(employee.id, employeeUpdate).subscribe({
+      next: () => {
+        this.snackBar.open(`Funcionário ${acao}do com sucesso!`, 'OK', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+        this.loadEmployees();
+      },
+      error: (error) => {
+        console.error(`Erro ao ${acao} funcionário:`, error);
+        this.snackBar.open(`Erro ao ${acao} funcionário`, 'OK', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+}
+
+  hardDeleteEmployee(id: number): void {
+    // Primeira confirmação
+    const confirmacao = confirm(
+      '⚠️ ATENÇÃO! Esta ação irá EXCLUIR PERMANENTEMENTE este funcionário do banco de dados. Esta operação é IRREVERSÍVEL.\n\nTem certeza?'
+    );
+    
+    if (confirmacao) {
+      // Segunda confirmação com texto específico
+      const confirmacao2 = prompt('Digite "EXCLUIR" para confirmar a exclusão permanente:');
+      
+      if (confirmacao2 === 'EXCLUIR') {
+        this.employeeService.hardDeleteEmployee(id).subscribe({
+          next: (response) => {
+            this.snackBar.open('Funcionário excluído permanentemente!', 'OK', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadEmployees();
+          },
+          error: (error) => {
+            console.error('Erro no hard delete:', error);
+            this.snackBar.open('Erro ao excluir permanentemente', 'OK', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      } else {
+        this.snackBar.open('Operação cancelada', 'OK', {
+          duration: 2000
+        });
+      }
     }
   }
 }
