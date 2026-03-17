@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Payroll.API.Data;
@@ -11,9 +12,11 @@ using Payroll.API.Data;
 namespace Payroll.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260311144903_AddEmploymentTypeToEmployee")]
+    partial class AddEmploymentTypeToEmployee
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,8 +251,8 @@ namespace Payroll.API.Migrations
                     b.Property<string>("Cnpj")
                         .HasColumnType("text");
 
-                    b.Property<DateOnly?>("ContractEndDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("ContractEndDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ContractNumber")
                         .HasColumnType("text");

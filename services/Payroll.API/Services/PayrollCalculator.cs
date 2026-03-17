@@ -5,7 +5,7 @@ namespace Payroll.API.Services;
 
 public class PayrollCalculator : IPayrollCalculator
 {
-    public Models.Payroll Calculate(int employeeId, int month, int year, decimal grossSalary)
+    public Models.Payroll Calculate(int employeeId, int month, int year, decimal grossSalary, EmploymentType employmentType)
     {
         var payroll = new Models.Payroll
         {
@@ -18,8 +18,36 @@ public class PayrollCalculator : IPayrollCalculator
             Items = new List<PayrollItem>()
         };
 
-        // Calcular INSS
-        payroll.Inss = CalculateInss(grossSalary);
+        switch (employmentType)
+        {
+            case EmploymentType.CLT:
+                CalculateCLT(payroll);
+                break;
+                
+            case EmploymentType.Intern:
+                CalculateIntern(payroll);
+                break;
+                
+            case EmploymentType.Apprentice:
+                CalculateApprentice(payroll);
+                break;
+                
+            case EmploymentType.PJ:
+                CalculatePJ(payroll);
+                break;
+                
+            case EmploymentType.Temporary:
+                CalculateTemporary(payroll);
+                break;
+        }
+
+        return payroll;
+    }
+
+    private void CalculateCLT(Models.Payroll payroll)
+    {
+        // CLT: INSS + IRRF
+        payroll.Inss = CalculateInss(payroll.GrossSalary);
         payroll.Items.Add(new PayrollItem
         {
             Description = "INSS",
@@ -27,8 +55,7 @@ public class PayrollCalculator : IPayrollCalculator
             Amount = payroll.Inss
         });
 
-        // Calcular IRRF
-        var baseIrrf = grossSalary - payroll.Inss;
+        var baseIrrf = payroll.GrossSalary - payroll.Inss;
         payroll.Irrf = CalculateIrrf(baseIrrf);
         payroll.Items.Add(new PayrollItem
         {
@@ -37,10 +64,73 @@ public class PayrollCalculator : IPayrollCalculator
             Amount = payroll.Irrf
         });
 
-        // Salário Líquido
-        payroll.NetSalary = grossSalary - payroll.Inss - payroll.Irrf;
+        payroll.NetSalary = payroll.GrossSalary - payroll.Inss - payroll.Irrf;
+    }
 
-        return payroll;
+    private void CalculateIntern(Models.Payroll payroll)
+    {
+        // Estagiário: SEM INSS, SEM IRRF
+        payroll.Inss = 0;
+        payroll.Irrf = 0;
+        payroll.NetSalary = payroll.GrossSalary;
+        
+        payroll.Items.Add(new PayrollItem
+        {
+            Description = "Bolsa de Estágio",
+            Type = ItemType.Earning,
+            Amount = payroll.GrossSalary
+        });
+    }
+
+    private void CalculateApprentice(Models.Payroll payroll)
+    {
+        // Jovem Aprendiz: INSS reduzido, isento de IRRF
+        payroll.Inss = CalculateInss(payroll.GrossSalary) * 0.5m; // 50% do INSS normal
+        payroll.Irrf = 0;
+        payroll.NetSalary = payroll.GrossSalary - payroll.Inss;
+        
+        payroll.Items.Add(new PayrollItem
+        {
+            Description = "INSS Aprendiz",
+            Type = ItemType.Deduction,
+            Amount = payroll.Inss
+        });
+        
+        payroll.Items.Add(new PayrollItem
+        {
+            Description = "Salário Aprendiz",
+            Type = ItemType.Earning,
+            Amount = payroll.GrossSalary
+        });
+    }
+
+    private void CalculatePJ(Models.Payroll payroll)
+    {
+        // PJ: SEM INSS, SEM IRRF
+        payroll.Inss = 0;
+        payroll.Irrf = 0;
+        payroll.NetSalary = payroll.GrossSalary;
+        
+        payroll.Items.Add(new PayrollItem
+        {
+            Description = "Serviços PJ",
+            Type = ItemType.Earning,
+            Amount = payroll.GrossSalary
+        });
+    }
+
+    private void CalculateTemporary(Models.Payroll payroll)
+    {
+        // Temporário: CLT normal
+        CalculateCLT(payroll);
+        
+        // Adicionar observação
+        payroll.Items.Add(new PayrollItem
+        {
+            Description = "Contrato Temporário",
+            Type = ItemType.Earning,
+            Amount = 0
+        });
     }
 
     private decimal CalculateInss(decimal salary)
