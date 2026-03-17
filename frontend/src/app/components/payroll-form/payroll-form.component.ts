@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ChangeDetectorRef } from '@angular/core'; // <-- ADICIONADO ChangeDetectorRef
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -269,6 +269,7 @@ export class PayrollFormComponent implements OnInit {
     private employeeService: EmployeeService,
     private dialogRef: MatDialogRef<PayrollFormComponent>,
     private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef, // <-- ADICIONADO
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.payrollForm = this.fb.group({
@@ -287,6 +288,10 @@ export class PayrollFormComponent implements OnInit {
     this.employeeService.getEmployees().subscribe({
       next: (data) => {
         this.employees = data.filter(e => e.isActive);
+        // CORREÇÃO: Forçar detecção de mudanças após atualizar os dados
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        });
       },
       error: (error) => {
         console.error('Erro ao carregar funcionários:', error);
@@ -319,6 +324,8 @@ export class PayrollFormComponent implements OnInit {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
+          this.loading = false;
+          this.cdr.detectChanges(); 
           this.dialogRef.close(result);
         },
         error: (error) => {
@@ -329,6 +336,7 @@ export class PayrollFormComponent implements OnInit {
             { duration: 3000, panelClass: ['error-snackbar'] }
           );
           this.loading = false;
+          this.cdr.detectChanges();
         }
       });
     }

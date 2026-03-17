@@ -13,9 +13,11 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDividerModule } from '@angular/material/divider';
 
 import { EmployeeService } from '../../services/employee.service';
-import { Employee, CreateEmployee } from '../../models/employee.model';
+import { Employee, CreateEmployee, EmploymentType } from '../../models/employee.model';
 
 @Component({
   selector: 'app-employee-form',
@@ -32,194 +34,17 @@ import { Employee, CreateEmployee } from '../../models/employee.model';
     MatDatepickerModule,
     MatNativeDateModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatSelectModule,
+    MatDividerModule
   ],
-  template: `
-    <div class="dialog-container">
-      <div class="dialog-header">
-        <h2>{{ data ? 'Editar Funcionário' : 'Novo Funcionário' }}</h2>
-        <button mat-icon-button (click)="onCancel()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <mat-dialog-content>
-      <form [formGroup]="employeeForm" class="employee-form">
-        <!-- Nome Completo -->
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Nome Completo</mat-label>
-          <input matInput formControlName="fullName" placeholder="Digite o nome completo">
-          <mat-icon matSuffix>person</mat-icon>
-          <mat-error *ngIf="employeeForm.get('fullName')?.hasError('required')">
-            Nome obrigatório
-          </mat-error>
-        </mat-form-field>
-
-        <!-- Email e Documento -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Email</mat-label>
-            <input matInput formControlName="email" type="email" placeholder="email@exemplo.com">
-            <mat-icon matSuffix>email</mat-icon>
-            <mat-error *ngIf="employeeForm.get('email')?.hasError('required')">
-              Email obrigatório
-            </mat-error>
-            <mat-error *ngIf="employeeForm.get('email')?.hasError('email')">
-              Email inválido
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Documento (CPF)</mat-label>
-            <input matInput formControlName="document" placeholder="Apenas números">
-            <mat-icon matSuffix>badge</mat-icon>
-            <mat-error *ngIf="employeeForm.get('document')?.hasError('required')">
-              Documento obrigatório
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- DATAS: Nascimento e Admissão -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Data de Nascimento</mat-label>
-            <input matInput [matDatepicker]="birthPicker" formControlName="birthDate">
-            <mat-datepicker-toggle matSuffix [for]="birthPicker"></mat-datepicker-toggle>
-            <mat-datepicker #birthPicker></mat-datepicker>
-            <mat-error *ngIf="employeeForm.get('birthDate')?.hasError('required')">
-              Data de nascimento obrigatória
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Data de Admissão</mat-label>
-            <input matInput [matDatepicker]="hirePicker" formControlName="hireDate">
-            <mat-datepicker-toggle matSuffix [for]="hirePicker"></mat-datepicker-toggle>
-            <mat-datepicker #hirePicker></mat-datepicker>
-            <mat-error *ngIf="employeeForm.get('hireDate')?.hasError('required')">
-              Data de admissão obrigatória
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- Cargo, Departamento e Salário -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Cargo</mat-label>
-            <input matInput formControlName="position" placeholder="Digite o cargo">
-            <mat-icon matSuffix>work</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Departamento</mat-label>
-            <input matInput formControlName="department" placeholder="Digite o departamento">
-            <mat-icon matSuffix>business</mat-icon>
-          </mat-form-field>
-        </div>
-
-        <!-- Salário e Status Ativo -->
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Salário</mat-label>
-            <input matInput formControlName="salary" type="number" placeholder="0.00">
-            <span matPrefix>R$&nbsp;</span>
-            <mat-error *ngIf="employeeForm.get('salary')?.hasError('required')">
-              Salário obrigatório
-            </mat-error>
-            <mat-error *ngIf="employeeForm.get('salary')?.hasError('min')">
-              Salário deve ser maior que zero
-            </mat-error>
-          </mat-form-field>
-
-          <mat-checkbox formControlName="isActive" color="primary" class="checkbox-field">
-            Funcionário Ativo
-          </mat-checkbox>
-        </div>
-      </form>
-    </mat-dialog-content>
-
-      <mat-dialog-actions align="end">
-        <button mat-button (click)="onCancel()">Cancelar</button>
-        <button mat-raised-button color="primary" (click)="onSubmit()" 
-                [disabled]="employeeForm.invalid || loading">
-          <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
-          <span *ngIf="!loading">{{ data ? 'Atualizar' : 'Salvar' }}</span>
-        </button>
-      </mat-dialog-actions>
-    </div>
-  `,
-  styles: [`
-    .dialog-container {
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .dialog-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 24px;
-      background: var(--primary);
-      color: white;
-
-      h2 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 500;
-      }
-
-      button {
-        color: white;
-      }
-    }
-
-    .employee-form {
-      padding: 20px 0;
-
-      .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 16px;
-      }
-
-      .full-width {
-        width: 100%;
-      }
-
-      mat-checkbox {
-        display: flex;
-        align-items: center;
-        margin-top: 8px;
-      }
-    }
-
-    mat-dialog-actions {
-      padding: 16px 24px;
-      margin: 0;
-      border-top: 1px solid rgba(0,0,0,0.08);
-
-      button {
-        min-width: 100px;
-        
-        mat-spinner {
-          display: inline-block;
-          margin-right: 8px;
-        }
-      }
-    }
-
-    @media (max-width: 600px) {
-      .form-row {
-        grid-template-columns: 1fr !important;
-        gap: 0 !important;
-      }
-    }
-  `]
+  templateUrl: './employee-form.component.html',
+  styleUrls: ['./employee-form.component.scss']
 })
 export class EmployeeFormComponent implements OnInit {
   employeeForm: FormGroup;
   loading = false;
+  EmploymentType = EmploymentType; // Para usar no template
 
   constructor(
     private fb: FormBuilder,
@@ -232,58 +57,180 @@ export class EmployeeFormComponent implements OnInit {
     this.employeeForm = this.fb.group({
       fullName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      document: ['', Validators.required],
+      document: ['', [
+        Validators.required, 
+        Validators.minLength(11), 
+        Validators.maxLength(11),
+        Validators.pattern(/^\d+$/)
+      ]],
       birthDate: [new Date(), Validators.required],
       hireDate: [new Date(), Validators.required],
       department: [''],
       position: [''],
       salary: [0, [Validators.required, Validators.min(0)]],
-      isActive: [true]
+      isActive: [true],
+      employmentType: [EmploymentType.CLT, Validators.required],
+      // Campos específicos por modalidade
+      contractNumber: [''],
+      contractEndDate: [null],
+      university: [''],
+      course: [''],
+      cnpj: [''],
+      hourlyRate: [0]
     });
+
+    // Monitorar mudanças no tipo de contratação para validar campos específicos
+    this.setupEmploymentTypeValidation();
   }
 
   ngOnInit(): void {
     if (this.data) {
-      this.employeeForm.patchValue({
-        fullName: this.data.fullName,
-        email: this.data.email,
-        document: this.data.document,
-        position: this.data.position,
-        salary: this.data.salary,
-        hireDate: this.data.hireDate ? new Date(this.data.hireDate) : new Date(),
-        isActive: this.data.isActive
-      });
+      this.patchFormValues();
     }
   }
 
+  private setupEmploymentTypeValidation(): void {
+    this.employeeForm.get('employmentType')?.valueChanges.subscribe(type => {
+      // Limpar validações anteriores
+      this.clearConditionalValidators();
+      
+      // Aplicar validações conforme o tipo
+      switch (type) {
+        case EmploymentType.Intern:
+          this.employeeForm.get('university')?.setValidators([Validators.required]);
+          this.employeeForm.get('course')?.setValidators([Validators.required]);
+          break;
+          
+        case EmploymentType.Apprentice:
+          this.employeeForm.get('contractNumber')?.setValidators([Validators.required]);
+          this.employeeForm.get('contractEndDate')?.setValidators([Validators.required]);
+          break;
+          
+        case EmploymentType.PJ:
+          this.employeeForm.get('cnpj')?.setValidators([
+            Validators.required,
+            Validators.pattern(/^\d{14}$/)
+          ]);
+          break;
+          
+        case EmploymentType.Temporary:
+          this.employeeForm.get('contractEndDate')?.setValidators([Validators.required]);
+          break;
+      }
+      
+      // Atualizar validade dos campos
+      this.updateConditionalValidators();
+    });
+  }
+
+  private clearConditionalValidators(): void {
+    const fields = ['university', 'course', 'contractNumber', 'contractEndDate', 'cnpj', 'hourlyRate'];
+    fields.forEach(field => {
+      this.employeeForm.get(field)?.clearValidators();
+      this.employeeForm.get(field)?.updateValueAndValidity();
+    });
+  }
+
+  private updateConditionalValidators(): void {
+    const fields = ['university', 'course', 'contractNumber', 'contractEndDate', 'cnpj', 'hourlyRate'];
+    fields.forEach(field => {
+      this.employeeForm.get(field)?.updateValueAndValidity();
+    });
+  }
+
+  private patchFormValues(): void {
+    if (!this.data) return;
+    
+    const formValue: any = {
+      fullName: this.data.fullName,
+      email: this.data.email,
+      document: this.data.document,
+      position: this.data.position,
+      department: this.data.department,
+      salary: this.data.salary,
+      isActive: this.data.isActive,
+      employmentType: this.data.employmentType,
+      contractNumber: this.data.contractNumber,
+      contractEndDate: this.data.contractEndDate ? new Date(this.data.contractEndDate) : null,
+      university: this.data.university,
+      course: this.data.course,
+      cnpj: this.data.cnpj,
+      hourlyRate: this.data.hourlyRate
+    };
+
+    // Converter datas
+    if (this.data.birthDate) {
+      formValue.birthDate = new Date(this.data.birthDate);
+    }
+    if (this.data.hireDate) {
+      formValue.hireDate = new Date(this.data.hireDate);
+    }
+
+    this.employeeForm.patchValue(formValue);
+  }
+
   onSubmit(): void {
-  if (this.employeeForm.valid) {
+    if (this.employeeForm.invalid) {
+      this.markAllAsTouched();
+      this.snackBar.open('Preencha todos os campos obrigatórios', 'OK', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     this.loading = true;
     
     const formValue = this.employeeForm.value;
     
+    // CORREÇÃO: Formatar datas para yyyy-MM-dd (sem hora, sem UTC)
+    // Isso é o que o C# espera para DateOnly
     const hireDate = formValue.hireDate 
-      ? new Date(formValue.hireDate).toISOString().split('T')[0] // Pega só yyyy-MM-dd
+      ? new Date(formValue.hireDate).toISOString().split('T')[0]
       : new Date().toISOString().split('T')[0];
-    
-    // Também precisamos de uma data de nascimento (BirthDate)
-    // Se não tiver no formulário, vamos usar uma data padrão ou a mesma de admissão
+
     const birthDate = formValue.birthDate 
       ? new Date(formValue.birthDate).toISOString().split('T')[0]
-      : new Date('1990-01-01').toISOString().split('T')[0]; // Data padrão
-    
-    // Enviar diretamente o objeto, sem wrapper
-    const employeeData = {
+      : new Date().toISOString().split('T')[0];
+
+    const employeeData: any = {
       fullName: formValue.fullName,
       email: formValue.email,
       document: formValue.document,
-      birthDate: birthDate, // Campo obrigatório no modelo
+      birthDate: birthDate,
       hireDate: hireDate,
-      department: formValue.department || formValue.position, // Ajuste conforme seu formulário
+      department: formValue.department || '',
       position: formValue.position || '',
       salary: Number(formValue.salary),
-      isActive: formValue.isActive
+      isActive: formValue.isActive,
+      employmentType: Number(formValue.employmentType)
     };
+
+    const employmentType = Number(formValue.employmentType);
+    
+    switch (employmentType) {
+      case EmploymentType.Intern:
+        employeeData.university = formValue.university;
+        employeeData.course = formValue.course;
+        break;
+        
+      case EmploymentType.Apprentice:
+        employeeData.contractNumber = formValue.contractNumber;
+        employeeData.contractEndDate = formValue.contractEndDate 
+          ? new Date(formValue.contractEndDate).toISOString().split('T')[0]  // yyyy-MM-dd
+          : null;
+        break;
+        
+      case EmploymentType.PJ:
+        employeeData.cnpj = formValue.cnpj?.replace(/\D/g, ''); // Remove máscara
+        break;
+        
+      case EmploymentType.Temporary:
+        employeeData.contractEndDate = formValue.contractEndDate 
+          ? new Date(formValue.contractEndDate).toISOString().split('T')[0]  // yyyy-MM-dd
+          : null;
+        break;
+    }
     
     console.log('Dados enviados:', employeeData);
 
@@ -299,6 +246,7 @@ export class EmployeeFormComponent implements OnInit {
           { duration: 3000, panelClass: ['success-snackbar'] }
         );
         this.loading = false;
+        this.cdr.detectChanges();
         this.dialogRef.close(true);
       },
       error: (error) => {
@@ -307,14 +255,14 @@ export class EmployeeFormComponent implements OnInit {
         
         let errorMessage = `Erro ao ${this.data ? 'atualizar' : 'criar'} funcionário`;
         
-        if (error.error?.errors) {
+        if (error.status === 409) {
+          errorMessage = 'Já existe um funcionário com este documento (CPF/CNPJ)';
+        } else if (error.error?.errors) {
           const validationErrors = error.error.errors;
-          console.log('Erros de validação detalhados:', validationErrors);
-          
           const errorList = Object.keys(validationErrors)
             .map(key => `${key}: ${validationErrors[key].join(', ')}`);
-          
           errorMessage = 'Erros de validação:\n' + errorList.join('\n');
+          console.log('Erros de validação detalhados:', validationErrors);
           console.log('Lista de erros:', errorList);
         } else if (error.error?.message) {
           errorMessage = error.error.message;
@@ -325,21 +273,32 @@ export class EmployeeFormComponent implements OnInit {
           panelClass: ['error-snackbar']
         });
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
-  } else {
+  }
+
+  private markAllAsTouched(): void {
     Object.keys(this.employeeForm.controls).forEach(key => {
       this.employeeForm.get(key)?.markAsTouched();
     });
-    
-    this.snackBar.open('Preencha todos os campos obrigatórios', 'OK', {
-      duration: 3000,
-      panelClass: ['error-snackbar']
-    });
   }
-}
 
   onCancel(): void {
     this.dialogRef.close(false);
+  }
+
+  // Getter para saber se é um tipo que precisa de campos específicos
+  get requiresContractEndDate(): boolean {
+    const type = this.employeeForm.get('employmentType')?.value;
+    return type === EmploymentType.Apprentice || type === EmploymentType.Temporary;
+  }
+
+  get requiresUniversity(): boolean {
+    return this.employeeForm.get('employmentType')?.value === EmploymentType.Intern;
+  }
+
+  get requiresCnpj(): boolean {
+    return this.employeeForm.get('employmentType')?.value === EmploymentType.PJ;
   }
 }

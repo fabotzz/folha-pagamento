@@ -142,3 +142,28 @@
   margin-bottom: 20px;
   text-align: center;
 }
+
+.full-width {
+  width: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  margin-left: 16px;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+  }
+}

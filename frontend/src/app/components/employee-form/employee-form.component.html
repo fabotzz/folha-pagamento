@@ -1,111 +1,71 @@
-<div class="container">
-  <div class="header">
-    <h2>{{ isEditMode ? 'Editar Funcionário' : 'Novo Funcionário' }}</h2>
+<div class="dialog-container">
+  <div class="dialog-header">
+    <h2>{{ data ? 'Editar Funcionário' : 'Novo Funcionário' }}</h2>
+    <button mat-icon-button (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
-  @if (loading) {
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>Carregando...</p>
-    </div>
-  }
+  <mat-dialog-content>
+    <form [formGroup]="employeeForm" class="employee-form">
+      <!-- Nome Completo -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nome Completo</mat-label>
+        <input matInput formControlName="fullName" placeholder="Digite o nome completo">
+        <mat-icon matSuffix>person</mat-icon>
+        <mat-error *ngIf="employeeForm.get('fullName')?.hasError('required')">
+          Nome obrigatório
+        </mat-error>
+        <mat-error *ngIf="employeeForm.get('fullName')?.hasError('minlength')">
+          Nome deve ter pelo menos 3 caracteres
+        </mat-error>
+      </mat-form-field>
 
-  @if (error) {
-    <div class="error-message">
-      {{ error }}
-    </div>
-  }
-
-  @if (!loading) {
-    <form (ngSubmit)="onSubmit()" #employeeForm="ngForm" class="employee-form">
-      <div class="form-group">
-        <label for="fullName">Nome Completo *</label>
-        <input
-          type="text"
-          id="fullName"
-          name="fullName"
-          [(ngModel)]="employee.fullName"
-          required
-          minlength="3"
-          maxlength="100"
-          #fullName="ngModel"
-          class="form-control"
-          [class.invalid]="fullName.invalid && fullName.touched"
-          placeholder="Digite o nome completo"
-        />
-        @if (fullName.invalid && fullName.touched) {
-          <div class="error-text">
-            @if (fullName.errors?.['required']) {
-              <div>Nome é obrigatório</div>
-            }
-            @if (fullName.errors?.['minlength']) {
-              <div>Nome deve ter pelo menos 3 caracteres</div>
-            }
-          </div>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email *</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          [(ngModel)]="employee.email"
-          required
-          email
-          maxlength="100"
-          #email="ngModel"
-          class="form-control"
-          [class.invalid]="email.invalid && email.touched"
-          placeholder="Digite o email"
-        />
-        @if (email.invalid && email.touched) {
-          <div class="error-text">
-            @if (email.errors?.['required']) {
-              <div>Email é obrigatório</div>
-            }
-            @if (email.errors?.['email']) {
-              <div>Email inválido</div>
-            }
-          </div>
-        }
-      </div>
-
-      <div class="form-group">
-        <label for="document">CPF *</label>
-        <input
-          type="text"
-          id="document"
-          name="document"
-          [(ngModel)]="employee.document"
-          required
-          minlength="11"
-          maxlength="11"
-          pattern="[0-9]*"
-          #document="ngModel"
-          class="form-control"
-          [class.invalid]="document.invalid && document.touched"
-          placeholder="Apenas números (11 dígitos)"
-          (input)="onDocumentInput($event)"
-        />
-        @if (document.invalid && document.touched) {
-          <div class="error-text">
-            @if (document.errors?.['required']) {
-              <div>CPF é obrigatório</div>
-            }
-            @if (document.errors?.['minlength'] || document.errors?.['maxlength']) {
-              <div>CPF deve ter exatamente 11 dígitos</div>
-            }
-            @if (document.errors?.['pattern']) {
-              <div>CPF deve conter apenas números</div>
-            }
-          </div>
-        }
-      </div>
-
+      <!-- Email e Documento -->
       <div class="form-row">
-        <!-- DATA DE NASCIMENTO - CAMPO OBRIGATÓRIO -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="email@exemplo.com">
+          <mat-icon matSuffix>email</mat-icon>
+          <mat-error *ngIf="employeeForm.get('email')?.hasError('required')">
+            Email obrigatório
+          </mat-error>
+          <mat-error *ngIf="employeeForm.get('email')?.hasError('email')">
+            Email inválido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Documento (CPF)</mat-label>
+          <input matInput formControlName="document" placeholder="Apenas números">
+          <mat-icon matSuffix>badge</mat-icon>
+          <mat-error *ngIf="employeeForm.get('document')?.hasError('required')">
+            Documento obrigatório
+          </mat-error>
+          <mat-error *ngIf="employeeForm.get('document')?.hasError('minlength') || 
+                              employeeForm.get('document')?.hasError('maxlength')">
+            CPF deve ter 11 dígitos
+          </mat-error>
+          <mat-error *ngIf="employeeForm.get('document')?.hasError('pattern')">
+            CPF deve conter apenas números
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Tipo de Contratação -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Tipo de Contratação</mat-label>
+        <mat-select formControlName="employmentType">
+          <mat-option [value]="EmploymentType.CLT">CLT</mat-option>
+          <mat-option [value]="EmploymentType.Intern">Estagiário</mat-option>
+          <mat-option [value]="EmploymentType.Apprentice">Jovem Aprendiz</mat-option>
+          <mat-option [value]="EmploymentType.PJ">Pessoa Jurídica (PJ)</mat-option>
+          <mat-option [value]="EmploymentType.Temporary">Temporário</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- DATAS: Nascimento e Admissão -->
+      <div class="form-row">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Data de Nascimento</mat-label>
           <input matInput [matDatepicker]="birthPicker" formControlName="birthDate">
@@ -127,16 +87,103 @@
         </mat-form-field>
       </div>
 
-      <div class="form-actions">
-        <a routerLink="/employees" class="btn-secondary">Cancelar</a>
-        <button 
-          type="submit" 
-          [disabled]="employeeForm.invalid || loading"
-          class="btn-primary"
-        >
-          {{ isEditMode ? 'Atualizar' : 'Salvar' }}
-        </button>
+      <!-- Campos específicos para Estagiário -->
+      <div *ngIf="requiresUniversity" class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Universidade</mat-label>
+          <input matInput formControlName="university" placeholder="Digite a universidade">
+          <mat-error *ngIf="employeeForm.get('university')?.hasError('required')">
+            Universidade obrigatória para estagiário
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Curso</mat-label>
+          <input matInput formControlName="course" placeholder="Digite o curso">
+          <mat-error *ngIf="employeeForm.get('course')?.hasError('required')">
+            Curso obrigatório para estagiário
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Campos específicos para PJ -->
+      <div *ngIf="requiresCnpj" class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>CNPJ</mat-label>
+          <input matInput formControlName="cnpj" placeholder="00.000.000/0000-00">
+          <mat-error *ngIf="employeeForm.get('cnpj')?.hasError('required')">
+            CNPJ obrigatório para PJ
+          </mat-error>
+          <mat-error *ngIf="employeeForm.get('cnpj')?.hasError('pattern')">
+            CNPJ inválido (deve ter 14 números)
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Campos para Aprendiz e Temporário -->
+      <div *ngIf="requiresContractEndDate" class="form-row">
+        <mat-form-field *ngIf="employeeForm.get('employmentType')?.value === EmploymentType.Apprentice" 
+                       appearance="outline" class="full-width">
+          <mat-label>Número do Contrato</mat-label>
+          <input matInput formControlName="contractNumber" placeholder="Digite o número do contrato">
+          <mat-error *ngIf="employeeForm.get('contractNumber')?.hasError('required')">
+            Número do contrato obrigatório
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Data de Término do Contrato</mat-label>
+          <input matInput [matDatepicker]="endPicker" formControlName="contractEndDate">
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+          <mat-error *ngIf="employeeForm.get('contractEndDate')?.hasError('required')">
+            Data de término obrigatória
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Cargo e Departamento -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Cargo</mat-label>
+          <input matInput formControlName="position" placeholder="Digite o cargo">
+          <mat-icon matSuffix>work</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Departamento</mat-label>
+          <input matInput formControlName="department" placeholder="Digite o departamento">
+          <mat-icon matSuffix>business</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Salário e Status Ativo -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Salário</mat-label>
+          <input matInput formControlName="salary" type="number" placeholder="0.00">
+          <span matPrefix>R$&nbsp;</span>
+          <mat-error *ngIf="employeeForm.get('salary')?.hasError('required')">
+            Salário obrigatório
+          </mat-error>
+          <mat-error *ngIf="employeeForm.get('salary')?.hasError('min')">
+            Salário deve ser maior que zero
+          </mat-error>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="isActive" color="primary" class="checkbox-field">
+          Funcionário Ativo
+        </mat-checkbox>
       </div>
     </form>
-  }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="onSubmit()" 
+            [disabled]="employeeForm.invalid || loading">
+      <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+      <span *ngIf="!loading">{{ data ? 'Atualizar' : 'Salvar' }}</span>
+    </button>
+  </mat-dialog-actions>
 </div>
