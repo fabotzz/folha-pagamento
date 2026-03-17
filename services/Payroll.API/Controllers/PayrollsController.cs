@@ -91,19 +91,26 @@ public class PayrollsController : ControllerBase
         if (exists)
             return BadRequest("Já existe uma folha de pagamento para este funcionário no período selecionado");
 
-        // Verificar se o funcionário existe no BANCO DE DADOS
-        var employeeExists = await CheckEmployeeExists(dto.EmployeeId);
-        if (!employeeExists)
+        // Buscar o funcionário para obter o EmploymentType e validar existência
+        var employee = await _context.Employees.FindAsync(dto.EmployeeId);
+        if (employee == null)
             return BadRequest("Funcionário não encontrado");
 
-        // Calcular a folha
-        var payroll = _calculator.Calculate(dto.EmployeeId, dto.Month, dto.Year, dto.GrossSalary);
+        // Calcular a folha passando o EmploymentType
+        var payroll = _calculator.Calculate(
+            dto.EmployeeId,
+            dto.Month,
+            dto.Year,
+            dto.GrossSalary,
+            employee.EmploymentType
+        );
 
         // Salvar no banco
         _context.Payrolls.Add(payroll);
         await _context.SaveChangesAsync();
 
-        var employeeName = await GetEmployeeName(dto.EmployeeId);
+        // Mapear para DTO e retornar
+        var employeeName = employee.FullName;
         return CreatedAtAction(nameof(GetPayroll), new { id = payroll.Id },
             MapToDto(payroll, new Dictionary<int, string> { { dto.EmployeeId, employeeName } }));
     }

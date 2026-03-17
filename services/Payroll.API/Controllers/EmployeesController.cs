@@ -136,6 +136,32 @@ public class EmployeesController : ControllerBase
         return NoContent();
     }
 
+
+    // DELETE: api/employees/hard/5 - Exclusão física/permanente
+    [HttpDelete("hard/{id}")]
+    public async Task<IActionResult> HardDeleteEmployee(int id)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null)
+            return NotFound();
+
+        _context.Employees.Remove(employee); // Exclusão física
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Funcionário excluído permanentemente" });
+    }
+
+    // DELETE: api/employees/hard/all - Excluir TODOS (CUIDADO!)
+    [HttpDelete("hard/all")]
+    public async Task<IActionResult> HardDeleteAllEmployees()
+    {
+        var employees = await _context.Employees.ToListAsync();
+        _context.Employees.RemoveRange(employees);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"{employees.Count} funcionários excluídos permanentemente" });
+    }
+
     private bool EmployeeExists(int id)
     {
         return _context.Employees.Any(e => e.Id == id);
